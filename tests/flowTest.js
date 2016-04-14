@@ -5,6 +5,7 @@ const flow = require('../lib/flow.js');
 function getAsync(func) {
     return function () {
         var args = [].slice.call(arguments);
+
         setTimeout(function () {
             func.apply(null, args);
         }, 0);
@@ -309,13 +310,26 @@ describe('flow.js', function () {
         });
 
         it('should call function for all values even if it gets errors', function (done) {
-            var func = function (value, next) {
+            var func = getAsync(function (value, next) {
                 next('error', value);
-            }
+            });
             var spy = sinon.spy(func);
 
-            flow.map([1, 2], getAsync(spy), function () {
+            flow.map([1, 2], spy, function () {
                 spy.calledTwice.should.be.true;
+                done();
+            });
+        });
+
+        it('should call function with arguments from values array', function (done) {
+            var func = getAsync(function (value, next) {
+                next('error', value);
+            });
+            var spy = sinon.spy(func);
+
+            flow.map([1, 2], spy, function () {
+                spy.firstCall.calledWith(1).should.be.true;
+                spy.secondCall.calledWith(2).should.be.true;
                 done();
             });
         });
